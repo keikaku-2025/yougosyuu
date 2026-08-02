@@ -1,0 +1,782 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#F7F5EF;
+    --paper-line: rgba(14,42,67,0.10);
+    --ink:#152534;
+    --ink-soft:#4B5D6B;
+    --navy:#0E2A43;
+    --blueprint:#0C3352;
+    --blueprint-deep:#082439;
+    --blueprint-line: rgba(126,196,236,0.35);
+    --cyan:#5FB6E0;
+    --amber:#C97C2A;
+    --green:#4C7A5D;
+    --red:#B4483B;
+    --display:'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', sans-serif;
+    --mono:'JetBrains Mono', 'SF Mono', monospace;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  #app-root{
+    font-family: var(--display);
+    color: var(--ink);
+    background: var(--paper);
+    min-height: 100%;
+    padding: 0 0 60px 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app-root *{ box-sizing:border-box; }
+  .wrap{ max-width: 640px; margin: 0 auto; padding: 20px 18px; }
+
+  /* ---------- Header (title block, like a drawing header) ---------- */
+  .titleblock{
+    border: 1.5px solid var(--navy);
+    background: rgba(255,255,255,0.55);
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .titleblock::before, .titleblock::after{
+    content:''; position:absolute; width:10px; height:10px;
+    border-top: 2px solid var(--navy); border-left: 2px solid var(--navy);
+    top:-2px; left:-2px;
+  }
+  .titleblock::after{
+    top:auto; left:auto; bottom:-2px; right:-2px;
+    border-top:none; border-left:none;
+    border-bottom:2px solid var(--navy); border-right:2px solid var(--navy);
+  }
+  .tb-eyebrow{ font-family: var(--mono); font-size:10.5px; letter-spacing:.14em; color:var(--ink-soft); text-transform:uppercase; }
+  .tb-title{ font-size:22px; font-weight:900; margin:2px 0 2px; letter-spacing:.02em; }
+  .tb-sub{ font-size:12px; color:var(--ink-soft); }
+  .tb-meta{ display:flex; gap:14px; margin-top:10px; font-family:var(--mono); font-size:11px; color:var(--ink-soft); flex-wrap:wrap; }
+  .tb-meta b{ color:var(--navy); font-weight:700; }
+
+  /* ---------- Nav ---------- */
+  .nav{ display:flex; gap:6px; margin-bottom:18px; }
+  .nav button{
+    flex:1; font-family: var(--mono); font-size:12px; letter-spacing:.04em;
+    padding:10px 6px; background:transparent; border:1.5px solid var(--navy); color:var(--navy);
+    cursor:pointer; border-radius:var(--radius); font-weight:700;
+  }
+  .nav button.active{ background:var(--navy); color:#fff; }
+  .nav button:disabled{ opacity:.35; cursor:not-allowed; }
+
+  /* ---------- Section shell ---------- */
+  .panel{ border:1px solid var(--paper-line); background:rgba(255,255,255,.5); padding:14px; margin-bottom:14px; border-radius:var(--radius); }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+  .panel-title{ font-weight:700; font-size:14px; }
+  .panel-title .code{ font-family:var(--mono); color:var(--cyan-text, var(--navy)); font-size:11px; margin-right:8px; opacity:.6;}
+  .chev{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
+  .panel-body{ margin-top:12px; }
+  .hidden{ display:none !important; }
+
+  label{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); letter-spacing:.06em; margin-bottom:4px; margin-top:10px; text-transform:uppercase;}
+  label:first-child{ margin-top:0; }
+  input[type=text], textarea, select{
+    width:100%; font-family:var(--display); font-size:14px; padding:9px 10px;
+    border:1px solid var(--navy); background:#fff; border-radius:var(--radius); color:var(--ink);
+  }
+  textarea{ min-height:110px; font-family:var(--mono); font-size:12.5px; line-height:1.6; resize:vertical;}
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn{
+    font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.03em;
+    padding:9px 14px; border-radius:var(--radius); border:1.5px solid var(--navy);
+    background:var(--navy); color:#fff; cursor:pointer;
+  }
+  .btn.ghost{ background:transparent; color:var(--navy); }
+  .btn.small{ padding:5px 9px; font-size:11px; }
+  .btn.danger{ border-color:var(--red); color:var(--red); background:transparent; }
+  .btn-row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.6; }
+
+  /* ---------- Library list ---------- */
+  .search{ margin-bottom:14px; }
+  .group{ margin-bottom:16px; }
+  .group-head{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); letter-spacing:.08em; border-bottom:1px solid var(--paper-line); padding-bottom:5px; margin-bottom:8px; display:flex; justify-content:space-between;}
+  .card-row{ border:1px solid var(--paper-line); background:rgba(255,255,255,.6); padding:10px 12px; margin-bottom:6px; border-radius:var(--radius); }
+  .card-row-top{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; cursor:pointer; }
+  .term-name{ font-weight:700; font-size:14px; }
+  .term-def-preview{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .code-tag{ font-family:var(--mono); font-size:9.5px; padding:2px 6px; border:1px solid var(--navy); color:var(--navy); border-radius:2px; white-space:nowrap; }
+  .weak-badge{ font-family:var(--mono); font-size:9.5px; color:var(--amber); margin-left:6px; }
+  .edit-form{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--paper-line); }
+  .empty-state{ text-align:center; padding:40px 10px; color:var(--ink-soft); font-size:13px; }
+  .empty-state .big{ font-family:var(--mono); font-size:11px; letter-spacing:.1em; margin-bottom:8px; text-transform:uppercase; }
+
+  /* ---------- Checkbox groups ---------- */
+  .cbgroup{ margin-bottom:10px; }
+  .cbgroup-title{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); margin-bottom:5px; display:flex; justify-content:space-between; }
+  .cbgroup-title a{ font-size:10px; color:var(--navy); cursor:pointer; text-decoration:underline; }
+  .cb-list{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cb-chip{ font-family:var(--mono); font-size:11px; padding:5px 9px; border:1px solid var(--navy); border-radius:20px; cursor:pointer; color:var(--navy); user-select:none;}
+  .cb-chip.on{ background:var(--navy); color:#fff; }
+  .cb-count{ opacity:.6; }
+
+  /* ---------- Study mode (blueprint) ---------- */
+  .study-shell{
+    background: linear-gradient(160deg, var(--blueprint), var(--blueprint-deep));
+    border-radius: 6px;
+    padding: 22px 16px 26px;
+    min-height: 420px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .study-top{ width:100%; display:flex; justify-content:space-between; align-items:center; font-family:var(--mono); color:#cfe7f5; font-size:11px; margin-bottom:14px; }
+  .study-top .round-tag{ background:rgba(255,255,255,0.1); padding:3px 8px; border-radius:2px; }
+  .progress-track{ width:100%; height:4px; background:rgba(255,255,255,.15); border-radius:2px; margin-bottom:22px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--cyan); transition: width .25s ease; }
+
+  .flip-scene{ width:100%; max-width:340px; perspective:1400px; margin-bottom:20px; }
+  .flip-card{ position:relative; width:100%; min-height:230px; transition: transform .5s cubic-bezier(.4,.2,.2,1); transform-style:preserve-3d; cursor:pointer;}
+  .flip-card.flipped{ transform: rotateY(180deg); }
+  .face{
+    position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    border:1.5px solid rgba(255,255,255,.55); border-radius:5px; background:rgba(9,44,71,.55);
+    padding:18px 18px; display:flex; flex-direction:column;
+  }
+  .face::before,.face::after{ content:''; position:absolute; width:9px; height:9px; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan); top:6px; left:6px; }
+  .face::after{ top:auto; left:auto; bottom:6px; right:6px; border-top:none; border-left:none; border-bottom:2px solid var(--cyan); border-right:2px solid var(--cyan); }
+  .face-back{ transform: rotateY(180deg); }
+  .face-code{ font-family:var(--mono); font-size:10px; color:var(--cyan); letter-spacing:.1em; margin-bottom:auto; padding-bottom:8px;}
+  .face-main{ display:flex; align-items:center; justify-content:center; flex:1; text-align:center; }
+  .face-term{ font-size:22px; font-weight:900; color:#fff; line-height:1.4; }
+  .face-def{ font-size:14.5px; color:#e8f3fa; line-height:1.75; }
+  .face-tap{ text-align:center; font-family:var(--mono); font-size:9.5px; color:rgba(255,255,255,.45); letter-spacing:.1em; margin-top:8px; }
+
+  .mark-row{ display:flex; gap:8px; width:100%; max-width:340px; }
+  .mark-btn{
+    flex:1; font-family:var(--mono); font-size:11.5px; font-weight:700; padding:11px 4px;
+    border-radius:4px; border:1.5px solid; cursor:pointer; background:rgba(255,255,255,.06); letter-spacing:.02em;
+  }
+  .mark-btn.mk-know{ border-color: #7FCB9C; color:#a8e6c0; }
+  .mark-btn.mk-unsure{ border-color: var(--amber); color:#f0b877; }
+  .mark-btn.mk-unknown{ border-color: #e08d80; color:#f2a99c; }
+  .mark-btn:disabled{ opacity:.25; cursor:default; }
+  .mark-btn:not(:disabled):active{ transform: scale(.96); }
+
+  .study-setup .btn-row{ margin-top:16px; }
+  .session-result{ text-align:center; color:var(--ink); }
+  .session-result .num{ font-family:var(--mono); font-size:34px; font-weight:700; }
+
+  /* ---------- Stats ---------- */
+  .stat-cards{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat-card{ border:1px solid var(--navy); padding:12px; border-radius:var(--radius); background:rgba(255,255,255,.55); }
+  .stat-num{ font-family:var(--mono); font-size:24px; font-weight:700; color:var(--navy); }
+  .stat-label{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+  .rank-row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--paper-line); font-size:13px; }
+  .rank-row .r-idx{ font-family:var(--mono); color:var(--ink-soft); font-size:11px; width:22px; }
+  .rank-row .r-term{ flex:1; }
+  .rank-row .r-score{ font-family:var(--mono); font-size:11px; color:var(--amber); }
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:var(--navy); color:#fff; font-family:var(--mono); font-size:12px;
+    padding:9px 16px; border-radius:4px; opacity:0; pointer-events:none; transition:opacity .25s ease, bottom .25s ease;
+    z-index:50; max-width:90%; text-align:center;
+  }
+  .toast.show{ opacity:1; bottom:26px; }
+
+  @media (max-width: 380px){
+    .tb-title{ font-size:19px; }
+    .face-term{ font-size:19px; }
+  }
+</style>
+
+<div id="app-root">
+  <div class="wrap">
+    <div class="titleblock">
+      <div class="tb-eyebrow">GIJUTSUSHI VOCAB / 技術士第一次試験</div>
+      <div class="tb-title">技術士用語帳</div>
+      <div class="tb-sub">GoodNoteのまとめを、シャッフルカードの反復に変換する</div>
+      <div class="tb-meta" id="headerMeta"></div>
+    </div>
+
+    <div class="nav">
+      <button data-view="library" class="active">語彙台帳</button>
+      <button data-view="study">シャッフル演習</button>
+      <button data-view="stats">弱点分析</button>
+    </div>
+
+    <div id="viewLibrary"></div>
+    <div id="viewStudy" class="hidden"></div>
+    <div id="viewStats" class="hidden"></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------------- category master (structural codes) ----------------
+  var CATEGORIES = [
+    {code:'APT', label:'適性科目', group:'適性科目'},
+    {code:'FND-1', label:'基礎1群：設計・計画', group:'基礎科目'},
+    {code:'FND-2', label:'基礎2群：情報・論理', group:'基礎科目'},
+    {code:'FND-3', label:'基礎3群：解析', group:'基礎科目'},
+    {code:'FND-4', label:'基礎4群：材料・化学・バイオ', group:'基礎科目'},
+    {code:'FND-5', label:'基礎5群：環境・エネルギー', group:'基礎科目'},
+    {code:'RD', label:'専門：道路', group:'専門科目'},
+    {code:'CONST', label:'専門：施工計画・施工設備・積算', group:'専門科目'},
+    {code:'URB', label:'専門：都市及び地方計画', group:'専門科目'},
+    {code:'ENV', label:'専門：建設環境', group:'専門科目'},
+    {code:'RIV', label:'専門：河川、砂防及び海岸・海洋', group:'専門科目'},
+    {code:'PORT', label:'専門：港湾及び空港', group:'専門科目'},
+    {code:'PWR', label:'専門：電力土木', group:'専門科目'},
+    {code:'RAIL', label:'専門：鉄道', group:'専門科目'},
+    {code:'TUN', label:'専門：トンネル', group:'専門科目'},
+    {code:'SOIL', label:'専門：土質及び基礎', group:'専門科目'},
+    {code:'STEEL', label:'専門：鋼構造及びコンクリート', group:'専門科目'}
+  ];
+  function catByCode(c){ for(var i=0;i<CATEGORIES.length;i++){ if(CATEGORIES[i].code===c) return CATEGORIES[i]; } return {code:c,label:c,group:'その他'}; }
+
+  var STORAGE_KEY = 'terms-data';
+  var state = {
+    terms: [],
+    loaded: false,
+    view: 'library',
+    libSearch: '',
+    libOpenPanels: {add:false, importp:false},
+    editingId: null,
+    study: { phase:'setup', selected:{}, queue:[], round:1, idx:0, revealed:false, results:{know:0,unsure:0,unknown:0}, requeue:[] },
+  };
+
+  // default: all categories selected for study setup
+  CATEGORIES.forEach(function(c){ state.study.selected[c.code] = true; });
+
+  function uid(){ return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  function showToast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(showToast._tm);
+    showToast._tm = setTimeout(function(){ t.classList.remove('show'); }, 1800);
+  }
+
+  // ---------------- persistence ----------------
+  async function loadData(){
+    try{
+      var res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        var parsed = JSON.parse(res.value);
+        state.terms = parsed.terms || [];
+      }
+    }catch(e){
+      state.terms = [];
+    }
+    state.loaded = true;
+    renderAll();
+  }
+
+  var saveTimer = null;
+  function saveData(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async function(){
+      try{
+        var payload = JSON.stringify({terms: state.terms});
+        var res = await window.storage.set(STORAGE_KEY, payload, false);
+        if(!res){ showToast('保存に失敗しました。もう一度試してください'); }
+      }catch(e){
+        showToast('保存エラー：通信状況を確認してください');
+      }
+    }, 250);
+  }
+
+  // ---------------- helpers ----------------
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function groupTerms(list){
+    var byCat = {};
+    list.forEach(function(t){
+      if(!byCat[t.category]) byCat[t.category] = [];
+      byCat[t.category].push(t);
+    });
+    return byCat;
+  }
+
+  // ==========================================================
+  // LIBRARY VIEW
+  // ==========================================================
+  function renderLibrary(){
+    var el = document.getElementById('viewLibrary');
+    if(!state.loaded){
+      el.innerHTML = '<div class="empty-state"><div class="big">LOADING</div>読み込み中…</div>';
+      return;
+    }
+
+    var addOpen = state.libOpenPanels.add;
+    var impOpen = state.libOpenPanels.importp;
+
+    var catOptions = groupOptionsHtml();
+
+    var html = '';
+
+    // --- add panel ---
+    html += '<div class="panel">'+
+      '<div class="panel-head" data-toggle="add"><div class="panel-title"><span class="code">ADD</span>用語を1件追加</div><div class="chev">'+(addOpen?'－':'＋')+'</div></div>'+
+      '<div class="panel-body '+(addOpen?'':'hidden')+'">'+
+        '<label>用語</label><input type="text" id="newTerm" placeholder="例：塑性変形">'+
+        '<label>意味・定義</label><textarea id="newDef" placeholder="例：力を取り除いても元に戻らない変形のこと"></textarea>'+
+        '<label>分野</label><select id="newCat">'+catOptions+'</select>'+
+        '<div class="btn-row"><button class="btn" id="btnAddTerm">台帳に追加</button></div>'+
+      '</div>'+
+    '</div>';
+
+    // --- bulk import panel ---
+    html += '<div class="panel">'+
+      '<div class="panel-head" data-toggle="importp"><div class="panel-title"><span class="code">IMPORT</span>まとめて取り込む</div><div class="chev">'+(impOpen?'－':'＋')+'</div></div>'+
+      '<div class="panel-body '+(impOpen?'':'hidden')+'">'+
+        '<label>分野（この取り込み分すべてに適用）</label><select id="impCat">'+catOptions+'</select>'+
+        '<label>用語と意味（1行1件。区切りは「：」「:」またはTab）</label>'+
+        '<textarea id="impText" placeholder="塑性変形：力を取り除いても元に戻らない変形\\nひずみ：変形量を元の長さで割った比率"></textarea>'+
+        '<div class="hint">GoodNoteのノートから「用語：意味」の形でコピペするだけで一括登録できます。</div>'+
+        '<div class="btn-row"><button class="btn" id="btnImport">一括取り込み</button></div>'+
+      '</div>'+
+    '</div>';
+
+    // --- search ---
+    html += '<input type="text" class="search" id="libSearch" placeholder="用語・意味で検索…" value="'+escapeHtml(state.libSearch)+'">';
+
+    // --- list grouped by category ---
+    var filtered = state.terms.filter(function(t){
+      if(!state.libSearch) return true;
+      var q = state.libSearch.toLowerCase();
+      return t.term.toLowerCase().indexOf(q)>=0 || t.def.toLowerCase().indexOf(q)>=0;
+    });
+
+    if(state.terms.length===0){
+      html += '<div class="empty-state"><div class="big">EMPTY</div>まだ用語が登録されていません。<br>上の「用語を1件追加」か「まとめて取り込む」から始めましょう。</div>';
+    } else if(filtered.length===0){
+      html += '<div class="empty-state">検索条件に一致する用語がありません</div>';
+    } else {
+      var byCat = groupTerms(filtered);
+      CATEGORIES.forEach(function(cat){
+        var items = byCat[cat.code];
+        if(!items || items.length===0) return;
+        html += '<div class="group"><div class="group-head"><span>'+cat.code+' ／ '+escapeHtml(cat.label)+'</span><span>'+items.length+'件</span></div>';
+        items.forEach(function(t){ html += termRowHtml(t); });
+        html += '</div>';
+      });
+      // orphan categories not in master list
+      Object.keys(byCat).forEach(function(code){
+        if(CATEGORIES.some(function(c){return c.code===code;})) return;
+        var items = byCat[code];
+        html += '<div class="group"><div class="group-head"><span>'+escapeHtml(code)+'</span><span>'+items.length+'件</span></div>';
+        items.forEach(function(t){ html += termRowHtml(t); });
+        html += '</div>';
+      });
+    }
+
+    el.innerHTML = html;
+    bindLibraryEvents();
+  }
+
+  function groupOptionsHtml(){
+    var groups = {};
+    CATEGORIES.forEach(function(c){ if(!groups[c.group]) groups[c.group]=[]; groups[c.group].push(c); });
+    var html = '';
+    Object.keys(groups).forEach(function(g){
+      html += '<optgroup label="'+escapeHtml(g)+'">';
+      groups[g].forEach(function(c){ html += '<option value="'+c.code+'">'+c.code+' ／ '+escapeHtml(c.label)+'</option>'; });
+      html += '</optgroup>';
+    });
+    return html;
+  }
+
+  function termRowHtml(t){
+    var isEditing = state.editingId === t.id;
+    var weak = (t.weakCount||0);
+    var row = '<div class="card-row" data-id="'+t.id+'">'+
+      '<div class="card-row-top" data-action="toggle-edit">'+
+        '<div><div class="term-name">'+escapeHtml(t.term)+(weak>=3?'<span class="weak-badge">要復習 x'+weak+'</span>':'')+'</div>'+
+        '<div class="term-def-preview">'+escapeHtml(t.def.length>60? t.def.slice(0,60)+'…' : t.def)+'</div></div>'+
+        '<div class="code-tag">'+escapeHtml(t.category)+'</div>'+
+      '</div>';
+    if(isEditing){
+      row += '<div class="edit-form">'+
+        '<label>用語</label><input type="text" class="editTerm" value="'+escapeHtml(t.term)+'">'+
+        '<label>意味・定義</label><textarea class="editDef">'+escapeHtml(t.def)+'</textarea>'+
+        '<label>分野</label><select class="editCat">'+CATEGORIES.map(function(c){return '<option value="'+c.code+'"'+(c.code===t.category?' selected':'')+'>'+c.code+' ／ '+escapeHtml(c.label)+'</option>';}).join('')+'</select>'+
+        '<div class="btn-row">'+
+          '<button class="btn small" data-action="save-edit" data-id="'+t.id+'">保存</button>'+
+          '<button class="btn ghost small" data-action="cancel-edit">閉じる</button>'+
+          '<button class="btn danger small" data-action="delete" data-id="'+t.id+'">削除</button>'+
+        '</div>'+
+      '</div>';
+    }
+    row += '</div>';
+    return row;
+  }
+
+  function bindLibraryEvents(){
+    var el = document.getElementById('viewLibrary');
+    el.querySelectorAll('[data-toggle]').forEach(function(h){
+      h.addEventListener('click', function(){
+        var key = h.getAttribute('data-toggle');
+        state.libOpenPanels[key] = !state.libOpenPanels[key];
+        renderLibrary();
+      });
+    });
+    var addBtn = document.getElementById('btnAddTerm');
+    if(addBtn) addBtn.addEventListener('click', function(){
+      var term = document.getElementById('newTerm').value.trim();
+      var def = document.getElementById('newDef').value.trim();
+      var cat = document.getElementById('newCat').value;
+      if(!term || !def){ showToast('用語と意味の両方を入力してください'); return; }
+      state.terms.push({id:uid(), term:term, def:def, category:cat, weakCount:0, correctCount:0, createdAt:Date.now()});
+      saveData();
+      state.libOpenPanels.add = true;
+      renderLibrary();
+      showToast('「'+term+'」を追加しました');
+    });
+    var impBtn = document.getElementById('btnImport');
+    if(impBtn) impBtn.addEventListener('click', function(){
+      var cat = document.getElementById('impCat').value;
+      var raw = document.getElementById('impText').value;
+      var lines = raw.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+      var added = 0;
+      lines.forEach(function(line){
+        var m = line.split(/\t|：|:/);
+        if(m.length>=2){
+          var term = m[0].trim();
+          var def = m.slice(1).join(':').trim();
+          if(term && def){
+            state.terms.push({id:uid(), term:term, def:def, category:cat, weakCount:0, correctCount:0, createdAt:Date.now()});
+            added++;
+          }
+        }
+      });
+      if(added>0){
+        saveData();
+        document.getElementById('impText').value='';
+        showToast(added+'件を取り込みました');
+      } else {
+        showToast('取り込める行がありませんでした（区切り文字を確認してください）');
+      }
+      renderLibrary();
+    });
+    var searchInput = document.getElementById('libSearch');
+    if(searchInput) searchInput.addEventListener('input', function(){
+      state.libSearch = searchInput.value;
+      renderLibrary();
+      setTimeout(function(){ var s=document.getElementById('libSearch'); if(s){ s.focus(); s.setSelectionRange(s.value.length,s.value.length);} }, 0);
+    });
+    el.querySelectorAll('[data-action="toggle-edit"]').forEach(function(h){
+      h.addEventListener('click', function(){
+        var id = h.closest('.card-row').getAttribute('data-id');
+        state.editingId = (state.editingId===id) ? null : id;
+        renderLibrary();
+      });
+    });
+    el.querySelectorAll('[data-action="cancel-edit"]').forEach(function(b){
+      b.addEventListener('click', function(){ state.editingId=null; renderLibrary(); });
+    });
+    el.querySelectorAll('[data-action="delete"]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id = b.getAttribute('data-id');
+        state.terms = state.terms.filter(function(t){return t.id!==id;});
+        state.editingId = null;
+        saveData();
+        renderLibrary();
+        showToast('削除しました');
+      });
+    });
+    el.querySelectorAll('[data-action="save-edit"]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id = b.getAttribute('data-id');
+        var row = b.closest('.card-row');
+        var t = state.terms.find(function(x){return x.id===id;});
+        if(!t) return;
+        t.term = row.querySelector('.editTerm').value.trim() || t.term;
+        t.def = row.querySelector('.editDef').value.trim() || t.def;
+        t.category = row.querySelector('.editCat').value;
+        state.editingId = null;
+        saveData();
+        renderLibrary();
+        showToast('更新しました');
+      });
+    });
+  }
+
+  // ==========================================================
+  // STUDY VIEW
+  // ==========================================================
+  function renderStudy(){
+    var el = document.getElementById('viewStudy');
+    if(state.study.phase === 'setup'){ el.innerHTML = studySetupHtml(); bindStudySetupEvents(); return; }
+    if(state.study.phase === 'session'){ el.innerHTML = studySessionHtml(); bindStudySessionEvents(); return; }
+    if(state.study.phase === 'done'){ el.innerHTML = studyDoneHtml(); bindStudyDoneEvents(); return; }
+  }
+
+  function studySetupHtml(){
+    if(state.terms.length===0){
+      return '<div class="empty-state"><div class="big">NO DATA</div>先に「語彙台帳」で用語を登録してください</div>';
+    }
+    var groups = {};
+    CATEGORIES.forEach(function(c){
+      var count = state.terms.filter(function(t){return t.category===c.code;}).length;
+      if(count===0) return;
+      if(!groups[c.group]) groups[c.group]=[];
+      groups[c.group].push({cat:c, count:count});
+    });
+    var html = '<div class="panel study-setup"><div class="panel-title" style="margin-bottom:12px;"><span class="code">SETUP</span>出題範囲を選ぶ</div>';
+    Object.keys(groups).forEach(function(g){
+      html += '<div class="cbgroup"><div class="cbgroup-title"><span>'+escapeHtml(g)+'</span><a data-groupall="'+g+'">全選択/解除</a></div><div class="cb-list">';
+      groups[g].forEach(function(item){
+        var on = !!state.study.selected[item.cat.code];
+        html += '<div class="cb-chip'+(on?' on':'')+'" data-catchip="'+item.cat.code+'">'+item.cat.code+' <span class="cb-count">('+item.count+')</span></div>';
+      });
+      html += '</div></div>';
+    });
+    var selectedCount = state.terms.filter(function(t){return state.study.selected[t.category];}).length;
+    html += '<div class="hint">選択中：'+selectedCount+'件がシャッフル対象です</div>';
+    html += '<div class="btn-row"><button class="btn" id="btnStartStudy" '+(selectedCount===0?'disabled':'')+'>シャッフル開始</button></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function bindStudySetupEvents(){
+    var el = document.getElementById('viewStudy');
+    el.querySelectorAll('[data-catchip]').forEach(function(chip){
+      chip.addEventListener('click', function(){
+        var code = chip.getAttribute('data-catchip');
+        state.study.selected[code] = !state.study.selected[code];
+        renderStudy();
+      });
+    });
+    el.querySelectorAll('[data-groupall]').forEach(function(a){
+      a.addEventListener('click', function(){
+        var g = a.getAttribute('data-groupall');
+        var codes = CATEGORIES.filter(function(c){return c.group===g;}).map(function(c){return c.code;});
+        var anyOff = codes.some(function(c){ return !state.study.selected[c]; });
+        codes.forEach(function(c){ state.study.selected[c] = anyOff; });
+        renderStudy();
+      });
+    });
+    var startBtn = document.getElementById('btnStartStudy');
+    if(startBtn) startBtn.addEventListener('click', function(){
+      var pool = state.terms.filter(function(t){ return state.study.selected[t.category]; });
+      state.study.queue = shuffle(pool.slice());
+      state.study.round = 1;
+      state.study.idx = 0;
+      state.study.revealed = false;
+      state.study.results = {know:0, unsure:0, unknown:0};
+      state.study.requeue = [];
+      state.study.phase = 'session';
+      renderStudy();
+    });
+  }
+
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+    }
+    return arr;
+  }
+
+  function studySessionHtml(){
+    var s = state.study;
+    var t = s.queue[s.idx];
+    if(!t){ s.phase='done'; return studyDoneHtml(); }
+    var total = s.queue.length;
+    var pct = Math.round((s.idx/total)*100);
+    var cat = catByCode(t.category);
+    var html = '<div class="study-shell">';
+    html += '<div class="study-top"><span>'+ (s.idx+1) +' / '+ total +'</span><span class="round-tag">ROUND '+s.round+'</span></div>';
+    html += '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>';
+    html += '<div class="flip-scene"><div class="flip-card'+(s.revealed?' flipped':'')+'" id="flipCard">'+
+      '<div class="face face-front"><div class="face-code">'+cat.code+'</div><div class="face-main"><div class="face-term">'+escapeHtml(t.term)+'</div></div><div class="face-tap">タップして意味を見る</div></div>'+
+      '<div class="face face-back"><div class="face-code">'+cat.code+' ／ 意味</div><div class="face-main"><div class="face-def">'+escapeHtml(t.def)+'</div></div><div class="face-tap">タップして用語に戻る</div></div>'+
+    '</div></div>';
+    html += '<div class="mark-row">'+
+      '<button class="mark-btn mk-know" data-mark="know" '+(s.revealed?'':'disabled')+'>覚えた</button>'+
+      '<button class="mark-btn mk-unsure" data-mark="unsure" '+(s.revealed?'':'disabled')+'>あやふや</button>'+
+      '<button class="mark-btn mk-unknown" data-mark="unknown" '+(s.revealed?'':'disabled')+'>わからない</button>'+
+    '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function bindStudySessionEvents(){
+    var el = document.getElementById('viewStudy');
+    var card = document.getElementById('flipCard');
+    if(card) card.addEventListener('click', function(){
+      state.study.revealed = !state.study.revealed;
+      renderStudy();
+    });
+    el.querySelectorAll('[data-mark]').forEach(function(b){
+      b.addEventListener('click', function(e){
+        e.stopPropagation();
+        var mark = b.getAttribute('data-mark');
+        applyMark(mark);
+      });
+    });
+  }
+
+  function applyMark(mark){
+    var s = state.study;
+    var t = s.queue[s.idx];
+    if(!t) return;
+    t.weakCount = t.weakCount || 0;
+    t.correctCount = t.correctCount || 0;
+    if(mark==='know'){ t.correctCount++; t.weakCount = Math.max(0, t.weakCount-1); s.results.know++; }
+    if(mark==='unsure'){ t.weakCount += 1; s.results.unsure++; if(s.round===1) s.requeue.push(t); }
+    if(mark==='unknown'){ t.weakCount += 2; s.results.unknown++; if(s.round===1) s.requeue.push(t); }
+    t.lastReviewed = Date.now();
+    saveData();
+
+    s.idx++;
+    s.revealed = false;
+    if(s.idx >= s.queue.length){
+      if(s.round===1 && s.requeue.length>0){
+        s.queue = shuffle(s.requeue.slice());
+        s.requeue = [];
+        s.round = 2;
+        s.idx = 0;
+      } else {
+        s.phase = 'done';
+      }
+    }
+    renderStudy();
+  }
+
+  function studyDoneHtml(){
+    var s = state.study;
+    var totalMarks = s.results.know + s.results.unsure + s.results.unknown;
+    var html = '<div class="panel session-result">';
+    html += '<div class="tb-eyebrow" style="margin-bottom:8px;">SESSION COMPLETE</div>';
+    html += '<div class="num">'+s.results.know+' / '+totalMarks+'</div>';
+    html += '<div class="hint">「覚えた」と即答できた割合です</div>';
+    html += '<div class="row2" style="margin-top:16px; text-align:left;">'+
+      '<div class="stat-card"><div class="stat-num" style="color:var(--amber)">'+s.results.unsure+'</div><div class="stat-label">あやふや</div></div>'+
+      '<div class="stat-card"><div class="stat-num" style="color:var(--red)">'+s.results.unknown+'</div><div class="stat-label">わからない</div></div>'+
+    '</div>';
+    html += '<div class="btn-row" style="justify-content:center; margin-top:20px;">'+
+      '<button class="btn" id="btnRestartStudy">もう一度シャッフル</button>'+
+      '<button class="btn ghost" id="btnBackLibrary">語彙台帳に戻る</button>'+
+    '</div></div>';
+    return html;
+  }
+
+  function bindStudyDoneEvents(){
+    var el = document.getElementById('viewStudy');
+    var r = document.getElementById('btnRestartStudy');
+    if(r) r.addEventListener('click', function(){ state.study.phase='setup'; renderStudy(); });
+    var b = document.getElementById('btnBackLibrary');
+    if(b) b.addEventListener('click', function(){ switchView('library'); });
+  }
+
+  // ==========================================================
+  // STATS VIEW
+  // ==========================================================
+  function renderStats(){
+    var el = document.getElementById('viewStats');
+    if(state.terms.length===0){
+      el.innerHTML = '<div class="empty-state"><div class="big">NO DATA</div>用語を登録すると、ここに弱点分析が表示されます</div>';
+      return;
+    }
+    var total = state.terms.length;
+    var reviewed = state.terms.filter(function(t){return t.lastReviewed;}).length;
+    var neverReviewed = total - reviewed;
+    var weakTop = state.terms.filter(function(t){return (t.weakCount||0)>0}).slice().sort(function(a,b){return (b.weakCount||0)-(a.weakCount||0);}).slice(0,10);
+
+    var html = '<div class="stat-cards">'+
+      '<div class="stat-card"><div class="stat-num">'+total+'</div><div class="stat-label">登録済み用語数</div></div>'+
+      '<div class="stat-card"><div class="stat-num">'+neverReviewed+'</div><div class="stat-label">未演習の用語</div></div>'+
+    '</div>';
+
+    // category coverage
+    html += '<div class="panel"><div class="panel-title" style="margin-bottom:10px;"><span class="code">COVERAGE</span>分野別の登録件数</div>';
+    CATEGORIES.forEach(function(c){
+      var n = state.terms.filter(function(t){return t.category===c.code;}).length;
+      if(n===0) return;
+      html += '<div class="rank-row"><span class="r-term">'+c.code+' ／ '+escapeHtml(c.label)+'</span><span class="r-score">'+n+'件</span></div>';
+    });
+    html += '</div>';
+
+    // weak ranking
+    html += '<div class="panel"><div class="panel-title" style="margin-bottom:10px;"><span class="code">要復習TOP10</span>間違えやすい用語</div>';
+    if(weakTop.length===0){
+      html += '<div class="hint">まだ演習記録がありません。シャッフル演習を行うとここに苦手用語が表示されます。</div>';
+    } else {
+      weakTop.forEach(function(t, i){
+        html += '<div class="rank-row"><span class="r-idx">'+(i+1)+'</span><span class="r-term">'+escapeHtml(t.term)+' <span class="code-tag" style="margin-left:4px;">'+t.category+'</span></span><span class="r-score">弱点度 '+t.weakCount+'</span></div>';
+      });
+    }
+    html += '</div>';
+
+    // export / reset
+    html += '<div class="panel"><div class="panel-title" style="margin-bottom:10px;"><span class="code">DATA</span>バックアップ</div>'+
+      '<div class="btn-row"><button class="btn ghost small" id="btnExport">JSONを書き出す</button><button class="btn danger small" id="btnResetAll">全データを削除</button></div>'+
+      '</div>';
+
+    el.innerHTML = html;
+
+    var exportBtn = document.getElementById('btnExport');
+    if(exportBtn) exportBtn.addEventListener('click', function(){
+      var blob = new Blob([JSON.stringify({terms:state.terms}, null, 2)], {type:'application/json'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'gijutsushi-tango-backup.json';
+      a.click();
+    });
+    var resetBtn = document.getElementById('btnResetAll');
+    if(resetBtn) resetBtn.addEventListener('click', function(){
+      if(confirm('登録した用語をすべて削除します。よろしいですか？')){
+        state.terms = [];
+        saveData();
+        renderAll();
+        showToast('全データを削除しました');
+      }
+    });
+  }
+
+  // ==========================================================
+  // NAV / HEADER
+  // ==========================================================
+  function switchView(v){
+    state.view = v;
+    document.querySelectorAll('.nav button').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-view')===v);
+    });
+    document.getElementById('viewLibrary').classList.toggle('hidden', v!=='library');
+    document.getElementById('viewStudy').classList.toggle('hidden', v!=='study');
+    document.getElementById('viewStats').classList.toggle('hidden', v!=='stats');
+    if(v==='study'){ state.study.phase='setup'; }
+    renderAll();
+  }
+
+  function renderHeader(){
+    var meta = document.getElementById('headerMeta');
+    var total = state.terms.length;
+    var groups = {};
+    state.terms.forEach(function(t){ var g = catByCode(t.category).group; groups[g]=(groups[g]||0)+1; });
+    var parts = ['<span><b>'+total+'</b> 語登録済</span>'];
+    Object.keys(groups).forEach(function(g){ parts.push('<span>'+g+' <b>'+groups[g]+'</b></span>'); });
+    meta.innerHTML = parts.join('');
+  }
+
+  function renderAll(){
+    renderHeader();
+    if(state.view==='library') renderLibrary();
+    if(state.view==='study') renderStudy();
+    if(state.view==='stats') renderStats();
+  }
+
+  document.querySelectorAll('.nav button').forEach(function(b){
+    b.addEventListener('click', function(){ switchView(b.getAttribute('data-view')); });
+  });
+
+  loadData();
+})();
+</script>
