@@ -30,14 +30,14 @@
     -webkit-font-smoothing: antialiased;
   }
   #app-root *{ box-sizing:border-box; }
-  .wrap{ max-width: 640px; margin: 0 auto; padding: 20px 18px; }
+  .wrap{ max-width: 640px; margin: 0 auto; padding: 18px 16px calc(84px + env(safe-area-inset-bottom, 0px)); }
 
   /* ---------- Header (title block, like a drawing header) ---------- */
   .titleblock{
     border: 1.5px solid var(--navy);
     background: rgba(255,255,255,0.55);
-    padding: 14px 16px;
-    margin-bottom: 18px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
     position: relative;
   }
   .titleblock::before, .titleblock::after{
@@ -53,22 +53,32 @@
   .tb-eyebrow{ font-family: var(--mono); font-size:10.5px; letter-spacing:.14em; color:var(--ink-soft); text-transform:uppercase; }
   .tb-title{ font-size:22px; font-weight:900; margin:2px 0 2px; letter-spacing:.02em; }
   .tb-sub{ font-size:12px; color:var(--ink-soft); }
-  .tb-meta{ display:flex; gap:14px; margin-top:10px; font-family:var(--mono); font-size:11px; color:var(--ink-soft); flex-wrap:wrap; }
+  .tb-meta{ display:flex; gap:12px; margin-top:9px; font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; padding-bottom:2px; }
+  .tb-meta span{ flex:none; }
   .tb-meta b{ color:var(--navy); font-weight:700; }
 
-  /* ---------- Nav ---------- */
-  .nav{ display:flex; gap:6px; margin-bottom:18px; }
-  .nav button{
-    flex:1; font-family: var(--mono); font-size:12px; letter-spacing:.04em;
-    padding:10px 6px; background:transparent; border:1.5px solid var(--navy); color:var(--navy);
-    cursor:pointer; border-radius:var(--radius); font-weight:700;
+  /* ---------- Nav (fixed bottom tab bar) ---------- */
+  .nav{
+    position: fixed; left:0; right:0; bottom:0; z-index:40;
+    display:flex; gap:2px;
+    background: rgba(247,245,239,0.96);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    border-top:1.5px solid var(--navy);
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px;
   }
-  .nav button.active{ background:var(--navy); color:#fff; }
+  .nav button{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    font-family: var(--mono); font-size:10px; letter-spacing:.03em;
+    padding:7px 2px; min-height:52px; background:transparent; border:none; color:var(--ink-soft);
+    cursor:pointer; border-radius:9px; font-weight:700;
+  }
+  .nav button svg{ width:20px; height:20px; stroke:currentColor; }
+  .nav button.active{ background:rgba(14,42,67,0.09); color:var(--navy); }
   .nav button:disabled{ opacity:.35; cursor:not-allowed; }
 
   /* ---------- Section shell ---------- */
   .panel{ border:1px solid var(--paper-line); background:rgba(255,255,255,.5); padding:14px; margin-bottom:14px; border-radius:var(--radius); }
-  .panel-head{ display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+  .panel-head{ display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; min-height:36px; }
   .panel-title{ font-weight:700; font-size:14px; }
   .panel-title .code{ font-family:var(--mono); color:var(--cyan-text, var(--navy)); font-size:11px; margin-right:8px; opacity:.6;}
   .chev{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
@@ -78,18 +88,20 @@
   label{ display:block; font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); letter-spacing:.06em; margin-bottom:4px; margin-top:10px; text-transform:uppercase;}
   label:first-child{ margin-top:0; }
   input[type=text], textarea, select{
-    width:100%; font-family:var(--display); font-size:14px; padding:9px 10px;
+    width:100%; font-family:var(--display); font-size:16px; padding:11px 10px;
     border:1px solid var(--navy); background:#fff; border-radius:var(--radius); color:var(--ink);
+    -webkit-tap-highlight-color: transparent;
   }
-  textarea{ min-height:110px; font-family:var(--mono); font-size:12.5px; line-height:1.6; resize:vertical;}
+  textarea{ min-height:110px; font-family:var(--mono); font-size:13.5px; line-height:1.6; resize:vertical;}
+  button, .cb-chip, .card-row-top, .panel-head{ -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .btn{
-    font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.03em;
-    padding:9px 14px; border-radius:var(--radius); border:1.5px solid var(--navy);
+    font-family:var(--mono); font-size:12.5px; font-weight:700; letter-spacing:.03em;
+    padding:12px 16px; min-height:44px; border-radius:var(--radius); border:1.5px solid var(--navy);
     background:var(--navy); color:#fff; cursor:pointer;
   }
   .btn.ghost{ background:transparent; color:var(--navy); }
-  .btn.small{ padding:5px 9px; font-size:11px; }
+  .btn.small{ padding:9px 12px; min-height:38px; font-size:11.5px; }
   .btn.danger{ border-color:var(--red); color:var(--red); background:transparent; }
   .btn-row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
   .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.6; }
@@ -99,7 +111,7 @@
   .group{ margin-bottom:16px; }
   .group-head{ font-family:var(--mono); font-size:11px; color:var(--ink-soft); letter-spacing:.08em; border-bottom:1px solid var(--paper-line); padding-bottom:5px; margin-bottom:8px; display:flex; justify-content:space-between;}
   .card-row{ border:1px solid var(--paper-line); background:rgba(255,255,255,.6); padding:10px 12px; margin-bottom:6px; border-radius:var(--radius); }
-  .card-row-top{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; cursor:pointer; }
+  .card-row-top{ display:flex; justify-content:space-between; gap:8px; align-items:flex-start; cursor:pointer; padding:2px 0; min-height:40px; }
   .term-name{ font-weight:700; font-size:14px; }
   .term-def-preview{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
   .code-tag{ font-family:var(--mono); font-size:9.5px; padding:2px 6px; border:1px solid var(--navy); color:var(--navy); border-radius:2px; white-space:nowrap; }
@@ -113,7 +125,7 @@
   .cbgroup-title{ font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); margin-bottom:5px; display:flex; justify-content:space-between; }
   .cbgroup-title a{ font-size:10px; color:var(--navy); cursor:pointer; text-decoration:underline; }
   .cb-list{ display:flex; flex-wrap:wrap; gap:6px; }
-  .cb-chip{ font-family:var(--mono); font-size:11px; padding:5px 9px; border:1px solid var(--navy); border-radius:20px; cursor:pointer; color:var(--navy); user-select:none;}
+  .cb-chip{ font-family:var(--mono); font-size:11.5px; padding:9px 13px; min-height:38px; display:flex; align-items:center; border:1px solid var(--navy); border-radius:20px; cursor:pointer; color:var(--navy); user-select:none;}
   .cb-chip.on{ background:var(--navy); color:#fff; }
   .cb-count{ opacity:.6; }
 
@@ -149,7 +161,7 @@
 
   .mark-row{ display:flex; gap:8px; width:100%; max-width:340px; }
   .mark-btn{
-    flex:1; font-family:var(--mono); font-size:11.5px; font-weight:700; padding:11px 4px;
+    flex:1; font-family:var(--mono); font-size:11.5px; font-weight:700; padding:13px 4px; min-height:48px;
     border-radius:4px; border:1.5px solid; cursor:pointer; background:rgba(255,255,255,.06); letter-spacing:.02em;
   }
   .mark-btn.mk-know{ border-color: #7FCB9C; color:#a8e6c0; }
@@ -173,12 +185,12 @@
   .rank-row .r-score{ font-family:var(--mono); font-size:11px; color:var(--amber); }
 
   .toast{
-    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    position:fixed; bottom:calc(70px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%);
     background:var(--navy); color:#fff; font-family:var(--mono); font-size:12px;
     padding:9px 16px; border-radius:4px; opacity:0; pointer-events:none; transition:opacity .25s ease, bottom .25s ease;
     z-index:50; max-width:90%; text-align:center;
   }
-  .toast.show{ opacity:1; bottom:26px; }
+  .toast.show{ opacity:1; bottom:calc(78px + env(safe-area-inset-bottom, 0px)); }
 
   @media (max-width: 380px){
     .tb-title{ font-size:19px; }
@@ -195,16 +207,25 @@
       <div class="tb-meta" id="headerMeta"></div>
     </div>
 
-    <div class="nav">
-      <button data-view="library" class="active">語彙台帳</button>
-      <button data-view="study">シャッフル演習</button>
-      <button data-view="stats">弱点分析</button>
-    </div>
-
     <div id="viewLibrary"></div>
     <div id="viewStudy" class="hidden"></div>
     <div id="viewStats" class="hidden"></div>
   </div>
+
+  <nav class="nav">
+    <button data-view="library" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h11a2 2 0 0 1 2 2V20l-4-2-3 2-3-2-4 2V6.5a2 2 0 0 1 2-2z"/><line x1="7.5" y1="8.5" x2="14.5" y2="8.5"/><line x1="7.5" y1="11.5" x2="14.5" y2="11.5"/></svg>
+      台帳
+    </button>
+    <button data-view="study">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h3.5l7 12H21"/><path d="M14.5 6H21v0"/><path d="M3 18h3.5l2.2-3.8"/><path d="M9.2 8.8 6.5 6H3"/><polyline points="18 3 21 6 18 9"/><polyline points="18 15 21 18 18 21"/></svg>
+      演習
+    </button>
+    <button data-view="stats">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="21" x2="5" y2="11"/><line x1="12" y1="21" x2="12" y2="6"/><line x1="19" y1="21" x2="19" y2="14"/><line x1="3" y1="21" x2="21" y2="21"/></svg>
+      分析
+    </button>
+  </nav>
   <div class="toast" id="toast"></div>
 </div>
 
