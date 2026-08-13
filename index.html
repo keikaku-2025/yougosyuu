@@ -116,6 +116,13 @@
 
   /* ---------- Library list ---------- */
   .search{ margin-bottom:14px; }
+  .lib-tabs{ display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px; margin-bottom:14px; scrollbar-width:none; }
+  .lib-tabs::-webkit-scrollbar{ display:none; }
+  .lib-tab{ flex:none; font-family:var(--mono); font-size:12px; font-weight:700; padding:9px 15px; min-height:38px;
+    display:flex; align-items:center; border:1.5px solid var(--navy); border-radius:20px; color:var(--navy);
+    background:transparent; cursor:pointer; white-space:nowrap; }
+  .lib-tab.active{ background:var(--navy); color:#fff; }
+  .lib-tab .cnt{ opacity:.6; margin-left:5px; }
   .group{ margin-bottom:16px; }
   .group-head{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); letter-spacing:.06em; border-bottom:1px solid var(--paper-line); padding-bottom:6px; margin-bottom:9px; display:flex; justify-content:space-between;}
   .card-row{ border:1px solid var(--paper-line); background:rgba(255,255,255,.65); padding:12px 14px; margin-bottom:8px; border-radius:var(--radius); }
@@ -272,6 +279,7 @@
     loaded: false,
     view: 'library',
     libSearch: '',
+    libCategoryFilter: 'ALL',
     libOpenPanels: {add:false, importp:false},
     editingId: null,
     study: { phase:'setup', selected:{}, queue:[], round:1, idx:0, revealed:false, results:{know:0,unsure:0,unknown:0}, requeue:[] },
@@ -291,15 +299,28 @@
   }
 
   // ---------------- persistence ----------------
+  // window.storage only exists inside Claude.ai's artifact preview. When this file is
+  // opened directly (GitHub Pages, downloaded file on a phone, etc.) it is undefined,
+  // so we fall back to the browser's own localStorage, which is what actually persists
+  // for real-world / self-hosted use.
+  var hasClaudeStorage = (typeof window.storage !== 'undefined') && window.storage && typeof window.storage.get === 'function';
+
   async function loadData(){
-    try{
-      var res = await window.storage.get(STORAGE_KEY, false);
-      if(res && res.value){
-        var parsed = JSON.parse(res.value);
+    var raw = null;
+    if(hasClaudeStorage){
+      try{
+        var res = await window.storage.get(STORAGE_KEY, false);
+        if(res && res.value) raw = res.value;
+      }catch(e){ raw = null; }
+    }
+    if(raw === null){
+      try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){ raw = null; }
+    }
+    if(raw){
+      try{
+        var parsed = JSON.parse(raw);
         state.terms = parsed.terms || [];
-      }
-    }catch(e){
-      state.terms = [];
+      }catch(e){ state.terms = []; }
     }
     state.loaded = true;
     renderAll();
@@ -309,13 +330,15 @@
   function saveData(){
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async function(){
-      try{
-        var payload = JSON.stringify({terms: state.terms});
-        var res = await window.storage.set(STORAGE_KEY, payload, false);
-        if(!res){ showToast('保存に失敗しました。もう一度試してください'); }
-      }catch(e){
-        showToast('保存エラー：通信状況を確認してください');
+      var payload = JSON.stringify({terms: state.terms});
+      var ok = false;
+      // always write to localStorage first -- this is the persistence that matters
+      // when the app is used standalone on a phone or via GitHub Pages
+      try{ localStorage.setItem(STORAGE_KEY, payload); ok = true; }catch(e){ ok = false; }
+      if(hasClaudeStorage){
+        try{ var res = await window.storage.set(STORAGE_KEY, payload, false); ok = ok || !!res; }catch(e){ /* localStorage result still stands */ }
       }
+      if(!ok){ showToast('保存に失敗しました。ブラウザの設定（プライベートモード等）を確認してください'); }
     }, 250);
   }
 
@@ -378,17 +401,26 @@
     // --- search ---
     html += '<input type="text" class="search" id="libSearch" placeholder="用語・意味で検索…" value="'+escapeHtml(state.libSearch)+'">';
 
-    // --- list grouped by category ---
+    // --- category tabs (search overrides tabs: while searching, show matches across all groups) ---
+    var isSearching = !!state.libSearch;
+    if(!isSearching && state.terms.length>0){
+      html += libTabsHtml();
+    }
+
+    // --- list ---
     var filtered = state.terms.filter(function(t){
       if(!state.libSearch) return true;
       var q = state.libSearch.toLowerCase();
       return t.term.toLowerCase().indexOf(q)>=0 || t.def.toLowerCase().indexOf(q)>=0;
     });
+    if(!isSearching && state.libCategoryFilter !== 'ALL'){
+      filtered = filtered.filter(function(t){ return t.category === state.libCategoryFilter; });
+    }
 
     if(state.terms.length===0){
       html += '<div class="empty-state"><div class="big">EMPTY</div>まだ用語が登録されていません。<br>上の「用語を1件追加」か「まとめて取り込む」から始めましょう。</div>';
     } else if(filtered.length===0){
-      html += '<div class="empty-state">検索条件に一致する用語がありません</div>';
+      html += '<div class="empty-state">'+(isSearching ? '検索条件に一致する用語がありません' : 'この分野にはまだ用語がありません')+'</div>';
     } else {
       var byCat = groupTerms(filtered);
       CATEGORIES.forEach(function(cat){
@@ -410,6 +442,23 @@
 
     el.innerHTML = html;
     bindLibraryEvents();
+  }
+
+  function libTabsHtml(){
+    var counts = {};
+    state.terms.forEach(function(t){ counts[t.category] = (counts[t.category]||0) + 1; });
+    var html = '<div class="lib-tabs">';
+    html += '<div class="lib-tab'+(state.libCategoryFilter==='ALL'?' active':'')+'" data-libtab="ALL">すべて <span class="cnt">'+state.terms.length+'</span></div>';
+    CATEGORIES.forEach(function(c){
+      if(!counts[c.code]) return;
+      html += '<div class="lib-tab'+(state.libCategoryFilter===c.code?' active':'')+'" data-libtab="'+c.code+'">'+c.code+' <span class="cnt">'+counts[c.code]+'</span></div>';
+    });
+    Object.keys(counts).forEach(function(code){
+      if(CATEGORIES.some(function(c){return c.code===code;})) return;
+      html += '<div class="lib-tab'+(state.libCategoryFilter===code?' active':'')+'" data-libtab="'+escapeHtml(code)+'">'+escapeHtml(code)+' <span class="cnt">'+counts[code]+'</span></div>';
+    });
+    html += '</div>';
+    return html;
   }
 
   function groupOptionsHtml(){
@@ -458,6 +507,13 @@
         renderLibrary();
       });
     });
+    el.querySelectorAll('[data-libtab]').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        state.libCategoryFilter = tab.getAttribute('data-libtab');
+        state.editingId = null;
+        renderLibrary();
+      });
+    });
     var addBtn = document.getElementById('btnAddTerm');
     if(addBtn) addBtn.addEventListener('click', function(){
       var term = document.getElementById('newTerm').value.trim();
@@ -467,6 +523,7 @@
       state.terms.push({id:uid(), term:term, def:def, category:cat, weakCount:0, correctCount:0, createdAt:Date.now()});
       saveData();
       state.libOpenPanels.add = true;
+      state.libCategoryFilter = cat;
       renderLibrary();
       showToast('「'+term+'」を追加しました');
     });
@@ -490,6 +547,7 @@
       if(added>0){
         saveData();
         document.getElementById('impText').value='';
+        state.libCategoryFilter = cat;
         showToast(added+'件を取り込みました');
       } else {
         showToast('取り込める行がありませんでした（区切り文字を確認してください）');
@@ -517,6 +575,9 @@
         var id = b.getAttribute('data-id');
         state.terms = state.terms.filter(function(t){return t.id!==id;});
         state.editingId = null;
+        if(state.libCategoryFilter !== 'ALL' && !state.terms.some(function(t){return t.category===state.libCategoryFilter;})){
+          state.libCategoryFilter = 'ALL';
+        }
         saveData();
         renderLibrary();
         showToast('削除しました');
