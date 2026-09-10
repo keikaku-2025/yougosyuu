@@ -253,25 +253,34 @@
 
   // ---------------- category master (structural codes) ----------------
   var CATEGORIES = [
-    {code:'APT', label:'適性科目', group:'適性科目'},
-    {code:'FND-1', label:'基礎1群：設計・計画', group:'基礎科目'},
-    {code:'FND-2', label:'基礎2群：情報・論理', group:'基礎科目'},
-    {code:'FND-3', label:'基礎3群：解析', group:'基礎科目'},
-    {code:'FND-4', label:'基礎4群：材料・化学・バイオ', group:'基礎科目'},
-    {code:'FND-5', label:'基礎5群：環境・エネルギー', group:'基礎科目'},
-    {code:'RD', label:'専門：道路', group:'専門科目'},
-    {code:'CONST', label:'専門：施工計画・施工設備・積算', group:'専門科目'},
-    {code:'URB', label:'専門：都市及び地方計画', group:'専門科目'},
-    {code:'ENV', label:'専門：建設環境', group:'専門科目'},
-    {code:'RIV', label:'専門：河川、砂防及び海岸・海洋', group:'専門科目'},
-    {code:'PORT', label:'専門：港湾及び空港', group:'専門科目'},
-    {code:'PWR', label:'専門：電力土木', group:'専門科目'},
-    {code:'RAIL', label:'専門：鉄道', group:'専門科目'},
-    {code:'TUN', label:'専門：トンネル', group:'専門科目'},
-    {code:'SOIL', label:'専門：土質及び基礎', group:'専門科目'},
-    {code:'STEEL', label:'専門：鋼構造及びコンクリート', group:'専門科目'}
+    {code:'適性', label:'適性科目', group:'適性科目'},
+    {code:'基礎1', label:'基礎1群：設計・計画', group:'基礎科目'},
+    {code:'基礎2', label:'基礎2群：情報・論理', group:'基礎科目'},
+    {code:'基礎3', label:'基礎3群：解析', group:'基礎科目'},
+    {code:'基礎4', label:'基礎4群：材料・化学・バイオ', group:'基礎科目'},
+    {code:'基礎5', label:'基礎5群：環境・エネルギー', group:'基礎科目'},
+    {code:'道路', label:'専門：道路', group:'専門科目'},
+    {code:'施工', label:'専門：施工計画・施工設備・積算', group:'専門科目'},
+    {code:'都市計画', label:'専門：都市及び地方計画', group:'専門科目'},
+    {code:'建設環境', label:'専門：建設環境', group:'専門科目'},
+    {code:'河川砂防', label:'専門：河川、砂防及び海岸・海洋', group:'専門科目'},
+    {code:'港湾空港', label:'専門：港湾及び空港', group:'専門科目'},
+    {code:'電力土木', label:'専門：電力土木', group:'専門科目'},
+    {code:'鉄道', label:'専門：鉄道', group:'専門科目'},
+    {code:'トンネル', label:'専門：トンネル', group:'専門科目'},
+    {code:'土質基礎', label:'専門：土質及び基礎', group:'専門科目'},
+    {code:'鋼構造', label:'専門：鋼構造及びコンクリート', group:'専門科目'}
   ];
+  // maps codes used by older versions of this app (English abbreviations) onto the
+  // current Japanese codes, so terms saved before this update keep their category
+  // instead of falling into an "unknown category" bucket.
+  var LEGACY_CODE_MAP = {
+    'APT':'適性','FND-1':'基礎1','FND-2':'基礎2','FND-3':'基礎3','FND-4':'基礎4','FND-5':'基礎5',
+    'RD':'道路','CONST':'施工','URB':'都市計画','ENV':'建設環境','RIV':'河川砂防','PORT':'港湾空港',
+    'PWR':'電力土木','RAIL':'鉄道','TUN':'トンネル','SOIL':'土質基礎','STEEL':'鋼構造'
+  };
   function catByCode(c){ for(var i=0;i<CATEGORIES.length;i++){ if(CATEGORIES[i].code===c) return CATEGORIES[i]; } return {code:c,label:c,group:'その他'}; }
+
 
   var STORAGE_KEY = 'terms-data';
   var state = {
@@ -320,6 +329,11 @@
       try{
         var parsed = JSON.parse(raw);
         state.terms = parsed.terms || [];
+        var migrated = false;
+        state.terms.forEach(function(t){
+          if(LEGACY_CODE_MAP[t.category]){ t.category = LEGACY_CODE_MAP[t.category]; migrated = true; }
+        });
+        if(migrated) saveData();
       }catch(e){ state.terms = []; }
     }
     state.loaded = true;
@@ -370,9 +384,7 @@
 
     var addOpen = state.libOpenPanels.add;
     var impOpen = state.libOpenPanels.importp;
-
     var catOptions = groupOptionsHtml();
-
     var html = '';
 
     // --- add panel ---
@@ -398,16 +410,29 @@
       '</div>'+
     '</div>';
 
-    // --- search ---
+    // --- search (stable node: never recreated on keystroke) ---
     html += '<input type="text" class="search" id="libSearch" placeholder="用語・意味で検索…" value="'+escapeHtml(state.libSearch)+'">';
 
-    // --- category tabs (search overrides tabs: while searching, show matches across all groups) ---
+    // --- results mount point, refreshed independently of the shell above ---
+    html += '<div id="libResults"></div>';
+
+    el.innerHTML = html;
+    bindLibraryShellEvents();
+    renderLibraryResults();
+  }
+
+  function renderLibraryResults(){
+    var container = document.getElementById('libResults');
+    if(!container) return;
+    var prevTabsEl = container.querySelector('.lib-tabs');
+    var prevScrollLeft = prevTabsEl ? prevTabsEl.scrollLeft : 0;
+    var html = '';
+
     var isSearching = !!state.libSearch;
     if(!isSearching && state.terms.length>0){
       html += libTabsHtml();
     }
 
-    // --- list ---
     var filtered = state.terms.filter(function(t){
       if(!state.libSearch) return true;
       var q = state.libSearch.toLowerCase();
@@ -426,7 +451,7 @@
       CATEGORIES.forEach(function(cat){
         var items = byCat[cat.code];
         if(!items || items.length===0) return;
-        html += '<div class="group"><div class="group-head"><span>'+cat.code+' ／ '+escapeHtml(cat.label)+'</span><span>'+items.length+'件</span></div>';
+        html += '<div class="group"><div class="group-head"><span>'+escapeHtml(cat.label)+'</span><span>'+items.length+'件</span></div>';
         items.forEach(function(t){ html += termRowHtml(t); });
         html += '</div>';
       });
@@ -440,8 +465,16 @@
       });
     }
 
-    el.innerHTML = html;
-    bindLibraryEvents();
+    container.innerHTML = html;
+    var newTabsEl = container.querySelector('.lib-tabs');
+    if(newTabsEl){
+      newTabsEl.scrollLeft = prevScrollLeft;
+      var activeTab = newTabsEl.querySelector('.lib-tab.active');
+      if(activeTab && typeof activeTab.scrollIntoView === 'function'){
+        activeTab.scrollIntoView({inline:'nearest', block:'nearest'});
+      }
+    }
+    bindLibraryResultsEvents(container);
   }
 
   function libTabsHtml(){
@@ -467,7 +500,7 @@
     var html = '';
     Object.keys(groups).forEach(function(g){
       html += '<optgroup label="'+escapeHtml(g)+'">';
-      groups[g].forEach(function(c){ html += '<option value="'+c.code+'">'+c.code+' ／ '+escapeHtml(c.label)+'</option>'; });
+      groups[g].forEach(function(c){ html += '<option value="'+c.code+'">'+escapeHtml(c.label)+'</option>'; });
       html += '</optgroup>';
     });
     return html;
@@ -486,7 +519,7 @@
       row += '<div class="edit-form">'+
         '<label>用語</label><input type="text" class="editTerm" value="'+escapeHtml(t.term)+'">'+
         '<label>意味・定義</label><textarea class="editDef">'+escapeHtml(t.def)+'</textarea>'+
-        '<label>分野</label><select class="editCat">'+CATEGORIES.map(function(c){return '<option value="'+c.code+'"'+(c.code===t.category?' selected':'')+'>'+c.code+' ／ '+escapeHtml(c.label)+'</option>';}).join('')+'</select>'+
+        '<label>分野</label><select class="editCat">'+CATEGORIES.map(function(c){return '<option value="'+c.code+'"'+(c.code===t.category?' selected':'')+'>'+escapeHtml(c.label)+'</option>';}).join('')+'</select>'+
         '<div class="btn-row">'+
           '<button class="btn small" data-action="save-edit" data-id="'+t.id+'">保存</button>'+
           '<button class="btn ghost small" data-action="cancel-edit">閉じる</button>'+
@@ -498,7 +531,7 @@
     return row;
   }
 
-  function bindLibraryEvents(){
+  function bindLibraryShellEvents(){
     var el = document.getElementById('viewLibrary');
     el.querySelectorAll('[data-toggle]').forEach(function(h){
       h.addEventListener('click', function(){
@@ -507,30 +540,28 @@
         renderLibrary();
       });
     });
-    el.querySelectorAll('[data-libtab]').forEach(function(tab){
-      tab.addEventListener('click', function(){
-        state.libCategoryFilter = tab.getAttribute('data-libtab');
-        state.editingId = null;
-        renderLibrary();
-      });
-    });
     var addBtn = document.getElementById('btnAddTerm');
     if(addBtn) addBtn.addEventListener('click', function(){
-      var term = document.getElementById('newTerm').value.trim();
-      var def = document.getElementById('newDef').value.trim();
+      var termInput = document.getElementById('newTerm');
+      var defInput = document.getElementById('newDef');
+      var term = termInput.value.trim();
+      var def = defInput.value.trim();
       var cat = document.getElementById('newCat').value;
       if(!term || !def){ showToast('用語と意味の両方を入力してください'); return; }
       state.terms.push({id:uid(), term:term, def:def, category:cat, weakCount:0, correctCount:0, createdAt:Date.now()});
       saveData();
-      state.libOpenPanels.add = true;
       state.libCategoryFilter = cat;
-      renderLibrary();
+      termInput.value = '';
+      defInput.value = '';
+      renderHeader();
+      renderLibraryResults();
       showToast('「'+term+'」を追加しました');
     });
     var impBtn = document.getElementById('btnImport');
     if(impBtn) impBtn.addEventListener('click', function(){
       var cat = document.getElementById('impCat').value;
-      var raw = document.getElementById('impText').value;
+      var impTextEl = document.getElementById('impText');
+      var raw = impTextEl.value;
       var lines = raw.split('\n').map(function(l){return l.trim();}).filter(Boolean);
       var added = 0;
       lines.forEach(function(line){
@@ -546,31 +577,44 @@
       });
       if(added>0){
         saveData();
-        document.getElementById('impText').value='';
+        impTextEl.value='';
         state.libCategoryFilter = cat;
         showToast(added+'件を取り込みました');
       } else {
         showToast('取り込める行がありませんでした（区切り文字を確認してください）');
       }
-      renderLibrary();
+      renderHeader();
+      renderLibraryResults();
     });
+    // Search only ever refreshes the results container below it — the input
+    // element itself is never rebuilt while typing, so focus, cursor position,
+    // Shift/Caps state and IME (kanji) conversion all keep working normally.
     var searchInput = document.getElementById('libSearch');
     if(searchInput) searchInput.addEventListener('input', function(){
       state.libSearch = searchInput.value;
-      renderLibrary();
-      setTimeout(function(){ var s=document.getElementById('libSearch'); if(s){ s.focus(); s.setSelectionRange(s.value.length,s.value.length);} }, 0);
+      renderLibraryResults();
     });
-    el.querySelectorAll('[data-action="toggle-edit"]').forEach(function(h){
+  }
+
+  function bindLibraryResultsEvents(container){
+    container.querySelectorAll('[data-libtab]').forEach(function(tab){
+      tab.addEventListener('click', function(){
+        state.libCategoryFilter = tab.getAttribute('data-libtab');
+        state.editingId = null;
+        renderLibraryResults();
+      });
+    });
+    container.querySelectorAll('[data-action="toggle-edit"]').forEach(function(h){
       h.addEventListener('click', function(){
         var id = h.closest('.card-row').getAttribute('data-id');
         state.editingId = (state.editingId===id) ? null : id;
-        renderLibrary();
+        renderLibraryResults();
       });
     });
-    el.querySelectorAll('[data-action="cancel-edit"]').forEach(function(b){
-      b.addEventListener('click', function(){ state.editingId=null; renderLibrary(); });
+    container.querySelectorAll('[data-action="cancel-edit"]').forEach(function(b){
+      b.addEventListener('click', function(){ state.editingId=null; renderLibraryResults(); });
     });
-    el.querySelectorAll('[data-action="delete"]').forEach(function(b){
+    container.querySelectorAll('[data-action="delete"]').forEach(function(b){
       b.addEventListener('click', function(){
         var id = b.getAttribute('data-id');
         state.terms = state.terms.filter(function(t){return t.id!==id;});
@@ -579,11 +623,12 @@
           state.libCategoryFilter = 'ALL';
         }
         saveData();
-        renderLibrary();
+        renderHeader();
+        renderLibraryResults();
         showToast('削除しました');
       });
     });
-    el.querySelectorAll('[data-action="save-edit"]').forEach(function(b){
+    container.querySelectorAll('[data-action="save-edit"]').forEach(function(b){
       b.addEventListener('click', function(){
         var id = b.getAttribute('data-id');
         var row = b.closest('.card-row');
@@ -594,7 +639,8 @@
         t.category = row.querySelector('.editCat').value;
         state.editingId = null;
         saveData();
-        renderLibrary();
+        renderHeader();
+        renderLibraryResults();
         showToast('更新しました');
       });
     });
@@ -793,7 +839,7 @@
     CATEGORIES.forEach(function(c){
       var n = state.terms.filter(function(t){return t.category===c.code;}).length;
       if(n===0) return;
-      html += '<div class="rank-row"><span class="r-term">'+c.code+' ／ '+escapeHtml(c.label)+'</span><span class="r-score">'+n+'件</span></div>';
+      html += '<div class="rank-row"><span class="r-term">'+escapeHtml(c.label)+'</span><span class="r-score">'+n+'件</span></div>';
     });
     html += '</div>';
 
